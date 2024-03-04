@@ -19,53 +19,34 @@
 #include <json_generator.h>
 
 static const char expected_str[] = "{\"first_bool\":true,\"first_int\":30,"\
-        "\"first_int64\":-102030405060708090,\"float_val\":54.16430,"\
-        "\"my_str\":\"new_name\",\"null_obj\":null,\"arr\":[[\"arr_string\","\
-        "false,45.12000,null,25,908070605040302010,{\"arr_obj_str\":\"sample\""\
-        "}]],\"my_obj\":{\"only_val\":5}}";
+		"\"first_int64\":-102030405060708090,\"float_val\":54.16430,"\
+		"\"my_str\":\"new_name\",\"null_obj\":null,\"arr\":[[\"arr_string\","\
+		"false,45.12000,null,25,908070605040302010,{\"arr_obj_str\":\"sample\""\
+		"}]],\"my_obj\":{\"only_val\":5}}";
 
-typedef struct {
-    char buf[256];
-    size_t offset;
-} json_gen_test_result_t;
-
-static void flush_str(char *buf, void *priv)
-{
-    json_gen_test_result_t *result = (json_gen_test_result_t *)priv;
-    if (result) {
-        if (strlen(buf) > sizeof(result->buf) - result->offset) {
-            printf("Result Buffer too small\r\n");
-            return;
-        }
-        memcpy(result->buf + result->offset, buf, strlen(buf));
-        result->offset += strlen(buf);
-    }
-}
 /* Creating JSON
 {
-    "first_bool": true,
-    "first_int": 30,
-    "first_int64": -102030405060708090,
-    "float_val": 54.1643,
-    "my_str": "new_name",
-    "null_obj": null,
-    "arr": [
-            ["arr_string", false, 45.2, null, 25, 908070605040302010, {
-             "arr_obj_str": "sample"
-             }]
-            ],
-    "my_obj": {
-        "only_val": 5
-    }
+	"first_bool": true,
+	"first_int": 30,
+	"first_int64": -102030405060708090,
+	"float_val": 54.1643,
+	"my_str": "new_name",
+	"null_obj": null,
+	"arr": [
+			["arr_string", false, 45.2, null, 25, 908070605040302010, {
+			 "arr_obj_str": "sample"
+			 }]
+			],
+	"my_obj": {
+		"only_val": 5
+	}
 }
 */
 
-static int json_gen_perform_test(json_gen_test_result_t *result, const char *expected)
+static int json_gen_perform_test(json_gen_str_t jstr, char **result,
+								 const char *expected)
 {
-	char buf[20];
-    memset(result, 0, sizeof(json_gen_test_result_t));
-	json_gen_str_t jstr;
-	json_gen_str_start(&jstr, buf, sizeof(buf), flush_str, result);
+	json_gen_str_start(&jstr, NULL, NULL);
 	json_gen_start_object(&jstr);
 	json_gen_obj_set_bool(&jstr, "first_bool", true);
 	json_gen_obj_set_int(&jstr, "first_int", 30);
@@ -91,24 +72,28 @@ static int json_gen_perform_test(json_gen_test_result_t *result, const char *exp
 	json_gen_pop_object(&jstr);
 	json_gen_end_object(&jstr);
 	json_gen_str_end(&jstr);
-    if (strcmp(expected, result->buf) == 0) {
-        return 0;
-    } else {
-        return -1;
-    }
+	*result = json_gen_get_json_string(&jstr);
+
+	if (strcmp(expected, *result) == 0) {
+		return 0;
+	} else {
+		return -1;
+	}
 }
 
 int main(int argc, char **argv)
 {
-    json_gen_test_result_t result;
+	json_gen_str_t jstr;
+	char *result_str;
 	printf("Creating JSON string [may require Line wrap enabled on console]\r\n");
-    int ret = json_gen_perform_test(&result, expected_str);
-    printf("Expected: %s\r\n", expected_str);
-	printf("Generated: %s\r\n", result.buf);
-    if (ret == 0) {
-        printf("Test Passed!\r\n");
-    } else {
-        printf("Test Failed!\r\n");
-    }
+	int ret = json_gen_perform_test(jstr, &result_str, expected_str);
+	printf("Expected:  %s\r\n", expected_str);
+	printf("Generated: %s\r\n", result_str);
+	if (ret == 0) {
+		printf("Test Passed!\r\n");
+	} else {
+		printf("Test Failed!\r\n");
+	}
+	json_gen_free_buffer(&jstr);
 	return ret;
 }

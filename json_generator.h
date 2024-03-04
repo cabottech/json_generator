@@ -27,6 +27,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -56,20 +57,20 @@ typedef void (*json_gen_flush_cb_t) (char *buf, void *priv);
  * Just define this structure and pass a pointer to it in the APIs below
  */
 typedef struct {
-    /** Pointer to the JSON buffer provided by the calling function */
+	/** Pointer to the JSON buffer provided by the calling function */
 	char *buf;
-    /** Size of the above buffer */
+	/** Current size of the above buffer */
 	int buf_size;
-    /** (Optional) callback function to invoke when the buffer gets full */
+	/** (Optional) callback function to invoke when the buffer gets full */
 	json_gen_flush_cb_t flush_cb;
-    /** (Optional) Private data to pass to the callback function */
+	/** (Optional) Private data to pass to the callback function */
 	void *priv;
-    /** (For Internal use only) */
+	/** (For Internal use only) */
 	bool comma_req;
-    /** (For Internal use only) */
+	/** (For Internal use only) */
 	char *free_ptr;
-    /** Total length */
-    int total_len;
+	/** Total length */
+	int total_len;
 } json_gen_str_t;
 
 /** Start a JSON String
@@ -81,17 +82,13 @@ typedef struct {
  * \param[out] jstr Pointer to an allocated \ref json_gen_str_t structure.
  * This will be initialised internally and needs to be passed to all
  * subsequent function calls
- * \param[out] buf Pointer to an allocated buffer into which the JSON
- * string will be written
- * \param[in] buf_size Size of the buffer
  * \param[in] flush_cb Pointer to the flushing function of type \ref json_gen_flush_cb_t
- * which will be invoked either when the buffer is full or when json_gen_str_end()
- * is invoked. Can be left NULL.
+ * which will be invoked when json_gen_str_end() is invoked. Can be left NULL.
  * \param[in] priv Private data to be passed to the flushing function callback.
  * Can be something like a session identifier (Eg. socket). Can be left NULL.
  */
-void json_gen_str_start(json_gen_str_t *jstr, char *buf, int buf_size,
-		json_gen_flush_cb_t flush_cb, void *priv);
+void json_gen_str_start(json_gen_str_t *jstr, json_gen_flush_cb_t flush_cb,
+						void *priv);
 
 /** End JSON string
  *
@@ -104,6 +101,18 @@ void json_gen_str_start(json_gen_str_t *jstr, char *buf, int buf_size,
  * \return Total length of the JSON created, including the NULL termination byte.
  */
 int json_gen_str_end(json_gen_str_t *jstr);
+
+// Function to get the JSON string
+/** Function to get the resulting JSON string
+ */
+char *json_gen_get_json_string(json_gen_str_t *jstr);
+
+/** Function to free the dynamic buffer
+ *
+ * Must be called after `json_gen_str_end` and finished using the resulting
+ * string. Failure to call will result in a memory leak!
+ */
+void json_gen_free_buffer(json_gen_str_t *jstr);
 
 /** Start a JSON object
  *
