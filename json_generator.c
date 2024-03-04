@@ -25,10 +25,12 @@
 #define MAX_FLOAT_IN_STR 	30
 #define MEM_CHUNK_SIZE      250
 
+
 static inline int json_gen_get_empty_len(json_gen_str_t *jstr)
 {
 	return (jstr->buf_size - (jstr->free_ptr - jstr->buf) - 1);
 }
+
 
 /* This will add the incoming string to the JSON string buffer and dynamically
  * resize it if the buffer is full.
@@ -60,6 +62,7 @@ static int json_gen_add_to_str(json_gen_str_t *jstr, const char *str)
 	return 0;
 }
 
+
 void json_gen_str_start(json_gen_str_t *jstr, json_gen_flush_cb_t flush_cb,
 						void *priv)
 {
@@ -73,6 +76,7 @@ void json_gen_str_start(json_gen_str_t *jstr, json_gen_flush_cb_t flush_cb,
 	jstr->free_ptr = jstr->buf;
 	jstr->priv = priv;
 }
+
 
 int json_gen_str_end(json_gen_str_t *jstr)
 {
@@ -90,18 +94,21 @@ int json_gen_str_end(json_gen_str_t *jstr)
 	return total_len + 1; /* +1 for the NULL termination */
 }
 
+
 char *json_gen_get_json_string(json_gen_str_t *jstr)
 {
 	return jstr->buf;
 }
 
+
 void json_gen_free_buffer(json_gen_str_t *jstr)
 {
+	memset(jstr, 0, sizeof(*jstr));
+
 	if (jstr->buf) {
 		free(jstr->buf);
 		jstr->buf = NULL;
 	}
-	memset(jstr, 0, sizeof(*jstr));
 }
 
 static inline void json_gen_handle_comma(json_gen_str_t *jstr)
